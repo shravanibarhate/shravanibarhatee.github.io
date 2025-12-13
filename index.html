@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Arogya Health Card – Complete with QR & PDF</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:Arial,sans-serif;background:#f2f4f7;padding:20px}
+.container{max-width:1100px;margin:auto}
+h1{text-align:center}
+.card{background:#fff;border-radius:10px;padding:20px;margin-bottom:20px;box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+h2{margin-top:0;border-bottom:1px solid #eee;padding-bottom:6px}
+label{font-weight:bold;margin-top:10px;display:block}
+input,select,textarea{width:100%;padding:8px;margin-top:4px}
+textarea{min-height:60px}
+.row{display:flex;gap:15px;flex-wrap:wrap}
+.row>div{flex:1}
+.alert{border:2px solid red;background:#fff5f5}
+.badge{font-size:12px;padding:2px 6px;border-radius:4px;margin-left:6px}
+.patient{background:#ffe58f}
+.doctor{background:#b7eb8f}
+.readonly{background:#f0f0f0}
+button{padding:12px 25px;font-size:16px;cursor:pointer;margin-top:10px}
+#qrcode{margin-top:10px}
+.footer{text-align:center;font-size:12px;color:#666}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<div class="container">
+<h1>Arogya Health Card – Complete</h1>
+
+<!-- PATIENT IDENTITY -->
+<div class="card">
+<h2>Patient Identity <span class="badge patient">Patient Reported</span></h2>
+<div class="row">
+<div><label>Full Name</label><input id="name"></div>
+<div><label>Date of Birth</label><input id="dob" type="date"></div>
+<div><label>Gender</label><select id="gender"><option>Male</option><option>Female</option><option>Other</option></select></div>
+</div>
+<div class="row">
+<div><label>Blood Group</label><input id="blood"></div>
+<div><label>Mobile Number</label><input id="mobile"></div>
+<div><label>Health Card ID</label><input id="cardid" class="readonly" readonly value="AHC-00123"></div>
+</div>
+</div>
+
+<!-- EMERGENCY -->
+<div class="card">
+<h2>Emergency Contact</h2>
+<div class="row">
+<div><label>Name</label><input id="emgname"></div>
+<div><label>Relation</label><input id="emgrel"></div>
+<div><label>Contact Number</label><input id="emgnum"></div>
+</div>
+</div>
+
+<!-- CRITICAL ALERTS -->
+<div class="card alert">
+<h2>Critical Medical Alerts</h2>
+<label>Allergies</label><textarea id="allergy"></textarea>
+<label>Chronic Conditions</label><textarea id="conditions"></textarea>
+</div>
+
+<!-- VITALS -->
+<div class="card">
+<h2>Vital Health Data</h2>
+<div class="row">
+<div><label>Height (cm)</label><input id="height"></div>
+<div><label>Weight (kg)</label><input id="weight"></div>
+<div><label>BP</label><input id="bp"></div>
+<div><label>Sugar</label><input id="sugar"></div>
+</div>
+</div>
+
+<!-- MEDICATION -->
+<div class="card">
+<h2>Current Medications <span class="badge patient">Patient Reported</span></h2>
+<textarea id="medications"></textarea>
+</div>
+
+<!-- MEDICAL HISTORY -->
+<div class="card">
+<h2>Medical & Surgical History</h2>
+<label>Past Medical History</label><textarea id="medhistory"></textarea>
+<label>Surgical History</label><textarea id="surgery"></textarea>
+</div>
+
+<!-- REPORTS -->
+<div class="card">
+<h2>Reports & Investigations</h2>
+<textarea id="reports"></textarea>
+</div>
+
+<!-- VACCINATION -->
+<div class="card">
+<h2>Vaccination Status (Optional)</h2>
+<div class="row">
+<div>
+<label><input type="checkbox" id="vac_tt"> Tetanus (TT)</label>
+<label><input type="checkbox" id="vac_covid"> COVID-19</label>
+<label><input type="checkbox" id="vac_hep"> Hepatitis-B</label>
+</div>
+</div>
+<label>Other Vaccines (if any)</label>
+<textarea id="vac_other" placeholder="Write any other vaccines manually"></textarea>
+</div>
+
+<!-- FAMILY -->
+<div class="card">
+<h2>Family Medical History</h2>
+<textarea id="family"></textarea>
+</div>
+
+<!-- LIFESTYLE -->
+<div class="card">
+<h2>Lifestyle Information</h2>
+<div class="row">
+<div><label>Smoking</label><select id="smoke"><option>No</option><option>Yes</option></select></div>
+<div><label>Alcohol</label><select id="alcohol"><option>No</option><option>Yes</option></select></div>
+</div>
+</div>
+
+<!-- DOCTOR SECTION -->
+<div class="card">
+<h2>Doctor Verified Section <span class="badge doctor">Doctor Only</span></h2>
+<label>Confirmed Diagnosis</label><textarea class="readonly" readonly></textarea>
+<label>Prescriptions</label><textarea class="readonly" readonly></textarea>
+<label>Doctor Notes</label><textarea class="readonly" readonly></textarea>
+</div>
+
+<!-- SAVE & QR -->
+<div class="card">
+<button onclick="saveAll()">Save / Update Health Card</button>
+<h2>QR Code</h2>
+<button onclick="generateQR()">Generate QR</button>
+<div id="qrcode"></div>
+</div>
+
+<div class="footer">Last Updated: <span id="updated"></span></div>
+
+<script>
+const ids=[
+'name','dob','gender','blood','mobile','emgname','emgrel','emgnum','allergy','conditions','height','weight','bp','sugar','medications','medhistory','surgery','reports','family','smoke','alcohol','vac_other'
+];
+
+// Load saved data
+ids.forEach(id=>{
+  const el=document.getElementById(id);
+  if(localStorage.getItem(id)) el.value=localStorage.getItem(id);
+});
+['vac_tt','vac_covid','vac_hep'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(localStorage.getItem(id)==='true') el.checked=true;
+});
+const last=localStorage.getItem('updated');
+if(last) document.getElementById('updated').innerText=last;
+
+function saveAll(){
+  ids.forEach(id=>localStorage.setItem(id,document.getElementById(id).value));
+  ['vac_tt','vac_covid','vac_hep'].forEach(id=>{
+    localStorage.setItem(id,document.getElementById(id).checked);
+  });
+  const time=new Date().toLocaleString();
+  localStorage.setItem('updated',time);
+  document.getElementById('updated').innerText=time;
+  alert('Health Card Updated Successfully');
+}
+
+function generateQR(){
+  const cardID=document.getElementById('cardid').value;
+  const qrDiv=document.getElementById('qrcode');
+  qrDiv.innerHTML='';
+  new QRCode(qrDiv, {
+    text: cardID,
+    width: 160,
+    height: 160
+  });
+  qrDiv.onclick = function(){ generatePDF(); };
+}
+
+function generatePDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 20;
+  doc.setFontSize(16);
+  doc.text('Arogya Health Card', 20, y); y+=10;
+  doc.setFontSize(11);
+
+  ids.forEach(id=>{
+    const val=document.getElementById(id).value;
+    doc.text(${id.replace('_',' ')}: ${val}, 20, y); y+=7;
+  });
+
+  ['vac_tt','vac_covid','vac_hep'].forEach(id=>{
+    const checked=document.getElementById(id).checked?'Yes':'No';
+    doc.text(${id}: ${checked}, 20, y); y+=7;
+  });
+
+  doc.text(Generated on: ${new Date().toLocaleString()}, 20, y+10);
+  doc.save('Arogya_Health_Card.pdf');
+}
+</script>
+</body>
+</html>
